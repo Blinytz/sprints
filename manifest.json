@@ -2,7 +2,7 @@
   "name": "Roman",
   "short_name": "Roman",
   "description": "Suivi d'écriture",
-  "start_url": "./index.html",
+"start_url": "/sprints/index.html",
   "display": "standalone",
   "background_color": "#f7f3ee",
   "theme_color": "#f7f3ee",
