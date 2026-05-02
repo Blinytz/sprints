@@ -22,12 +22,12 @@
     --text3: #b8a898;
     --accent: #8b5e3c;
     --accent2: #a67c52;
-    --red: #c0392b;
-    --red-bg: #fdf0ee;
-    --yellow: #b07d10;
-    --yellow-bg: #fdf6e3;
-    --green: #2d7a4f;
-    --green-bg: #edf7f2;
+    --red: #b07d10;
+    --red-bg: #fdf6e3;
+    --yellow: #2d7a4f;
+    --yellow-bg: #edf7f2;
+    --green: #6b4fa0;
+    --green-bg: #f3effe;
     --nav-h: 64px;
     --radius: 14px;
     --radius-sm: 9px;
@@ -1107,7 +1107,7 @@ function renderParams() {
       <div><div class="param-label">Pages conservées</div></div>
       <div class="stepper">
         <button class="step-btn" onclick="adjustPages(-1)">−</button>
-        <div class="step-val" id="pages-val">${data.marathon.pagesCurrent}</div>
+        <input class="param-input mono" type="number" id="pages-val" value="${data.marathon.pagesCurrent}" inputmode="numeric" style="width:60px;text-align:center;" onchange="savePagesDirect()">
         <button class="step-btn" onclick="adjustPages(1)">+</button>
       </div>
     </div>
@@ -1259,7 +1259,7 @@ function showDetail(sessionId) {
   const s = data.sessions.find(s => s.id === sessionId);
   if (!s) return;
   document.getElementById('detail-title').textContent = fmtDate(s.date) + ' — ' + fmtNum(s.words) + ' mots';
-  const colorLabel = s.color === 'green' ? '🟢 Excellente' : s.color === 'yellow' ? '🟡 Correcte' : '🔴 Faible';
+  const colorLabel = s.color === 'green' ? '🟣 Excellente' : s.color === 'yellow' ? '🟢 Correcte' : '🟡 Faible';
   document.getElementById('detail-body').innerHTML = `
     <div style="margin-bottom:12px;font-size:14px;color:var(--text2);">${colorLabel}</div>
     ${s.note ? `<div style="font-size:14px;color:var(--text);font-style:italic;line-height:1.6;">"${s.note}"</div>` : '<div style="font-size:13px;color:var(--text3);font-style:italic;">Aucune note.</div>'}`;
@@ -1406,7 +1406,13 @@ function adjustPages(delta) {
   data.marathon.pagesCurrent = Math.max(0, data.marathon.pagesCurrent + delta);
   saveData(data);
   const el = document.getElementById('pages-val');
-  if (el) el.textContent = data.marathon.pagesCurrent;
+  if (el) el.value = data.marathon.pagesCurrent;
+}
+
+function savePagesDirect() {
+  const data = loadData();
+  const val = parseInt(document.getElementById('pages-val').value);
+  if (val >= 0) { data.marathon.pagesCurrent = val; saveData(data); }
 }
 
 function saveMarathonGoal() {
