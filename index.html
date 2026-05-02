@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f7f3ee">
+<title>Roman</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #f7f3ee;
+    --bg2: #ffffff;
+    --bg3: #f0ebe4;
+    --border: #e5ddd4;
+    --border2: #d6ccc0;
+    --text: #2c2416;
+    --text2: #8a7a68;
+    --text3: #b8a898;
+    --accent: #8b5e3c;
+    --accent2: #a67c52;
+    --red: #c0392b;
+    --red-bg: #fdf0ee;
+    --yellow: #b07d10;
+    --yellow-bg: #fdf6e3;
+    --green: #2d7a4f;
+    --green-bg: #edf7f2;
+    --nav-h: 64px;
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .page {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 16px calc(var(--nav-h) + 16px);
+    -webkit-overflow-scrolling: touch;
+  }
+  .page.active { display: block; }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    height: var(--nav-h);
+    background: var(--bg2);
+    display: flex;
+    z-index: 100;
+    box-shadow: 0 -1px 0 var(--border);
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 10px;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn svg { width: 22px; height: 22px; }
+
+  /* TYPOGRAPHY */
+  .page-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  h2 {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* PROGRESS BAR */
+  .prog-wrap { margin: 10px 0 4px; }
+  .prog-bg {
+    background: var(--bg3);
+    border-radius: 3px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .prog-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent2);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 2px;
+  }
+  .prog-fill.marathon { background: #7c6f9f; }
+  .prog-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 6px;
+  }
+  .prog-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .prog-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+  .prog-pct.marathon { color: #9b8ec4; }
+  .prog-sub {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  /* SESSION DOTS */
+  .sessions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .session-dot {
+    flex: 1;
+    aspect-ratio: 1;
+    max-width: 52px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    position: relative;
+  }
+  .session-dot:active { opacity: 0.7; }
+  .session-dot.red { background: var(--red-bg); border: 1px solid var(--red); }
+  .session-dot.yellow { background: var(--yellow-bg); border: 1px solid var(--yellow); }
+  .session-dot.green { background: var(--green-bg); border: 1px solid var(--green); }
+  .session-dot.empty { background: var(--bg3); border: 1px dashed var(--border2); }
+  .session-dot-words {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .session-dot.red .session-dot-words { color: var(--red); }
+  .session-dot.yellow .session-dot-words { color: var(--yellow); }
+  .session-dot.green .session-dot-words { color: var(--green); }
+
+  /* SPRINT HISTORY CARD */
+  .sprint-hist {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .sprint-hist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .sprint-hist-name {
+    font-weight: 500;
+    font-size: 14px;
+  }
+  .sprint-hist-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+  .sprint-hist-status.active {
+    background: rgba(232, 213, 176, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(232, 213, 176, 0.3);
+  }
+  .sprint-hist-status.closed {
+    background: var(--bg3);
+    color: var(--text3);
+    border: 1px solid var(--border);
+  }
+  .sprint-hist-meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .sprint-hist-meta span { font-family: 'DM Mono', monospace; color: var(--text); }
+
+  /* RECORDS */
+  .records-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .record-item {
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+  }
+  .record-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--accent);
+  }
+  .record-lbl {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  /* PREVISIONNEL */
+  .previsionnel {
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text2);
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .previsionnel.warning { color: #d4a017; }
+  .previsionnel.good { color: var(--green); }
+
+  /* HISTORIQUE */
+  .hist-session {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    cursor: pointer;
+  }
+  .hist-session:last-child {}
+  .hist-color-bar {
+    width: 4px;
+    height: 36px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .hist-color-bar.red { background: var(--red); }
+  .hist-color-bar.yellow { background: var(--yellow); }
+  .hist-color-bar.green { background: var(--green); }
+  .hist-info { flex: 1; }
+  .hist-words {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .hist-date { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .hist-note { font-size: 12px; color: var(--text2); margin-top: 2px; font-style: italic; }
+  .hist-edit-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 16px;
+  }
+
+  /* PARAMÈTRES */
+  .param-section {
+    margin-bottom: 28px;
+  }
+  .param-section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+  .param-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+  }
+  .param-row:last-child {}
+  .param-label { font-size: 14px; color: var(--text); }
+  .param-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .param-input {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 6px 10px;
+    width: 110px;
+    text-align: right;
+    outline: none;
+  }
+  .param-input:focus { border-color: var(--accent2); }
+  .param-input.wide { width: 160px; }
+
+  /* STEPPER */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .step-btn:active { background: var(--border2); }
+  .step-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    border: none;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--accent);
+    color: #0f0f0f;
+  }
+  .btn-secondary {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-danger {
+    background: var(--red-bg);
+    color: var(--red);
+    border: 1px solid var(--red);
+  }
+  .btn-full { width: 100%; }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+
+  /* FAB */
+  .fab {
+    position: fixed;
+    bottom: calc(var(--nav-h) + 16px);
+    right: 50%;
+    transform: translateX(calc(50% - 16px - (430px / 2 - 100%)));
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    font-size: 26px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(232, 213, 176, 0.25);
+    transition: transform 0.15s, box-shadow 0.15s;
+    z-index: 50;
+  }
+  .fab:active { transform: translateX(calc(50% - 16px - (430px / 2 - 100%))) scale(0.93); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    max-width: 430px;
+    animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .modal-center {
+    align-items: center;
+    padding: 20px;
+  }
+  .modal-center .modal {
+    border-radius: var(--radius);
+    max-width: 360px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+  .modal-field { margin-bottom: 16px; }
+  .modal-field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+  .modal-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    padding: 10px 12px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .modal-input:focus { border-color: var(--accent2); }
+  .modal-input.mono { font-family: 'DM Mono', monospace; }
+  textarea.modal-input { resize: none; height: 80px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-actions .btn { flex: 1; }
+
+  /* COLOR PREVIEW */
+  .color-preview {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .cp-item {
+    flex: 1;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+  .cp-item.red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  .cp-item.yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow); }
+  .cp-item.green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+
+  /* FILTER */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-chip.active {
+    background: rgba(232, 213, 176, 0.1);
+    color: var(--accent);
+    border-color: rgba(232, 213, 176, 0.4);
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 16px;
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* ERROR */
+  .error-msg {
+    background: var(--red-bg);
+    border: 1px solid var(--red);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--red);
+    font-size: 13px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* SPRINT FORM */
+  .sprint-form-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .sprint-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .sprint-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+  .sprint-tag.active {
+    background: rgba(232, 213, 176, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(232, 213, 176, 0.3);
+  }
+  .sprint-tag.closed {
+    background: var(--bg3);
+    color: var(--text3);
+    border: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- PAGE ACCUEIL -->
+  <div class="page active" id="page-home">
+    <div id="home-content"></div>
+  </div>
+
+  <!-- PAGE HISTORIQUE -->
+  <div class="page" id="page-history">
+    <div class="page-title">Historique</div>
+    <div class="filter-row" id="hist-filters"></div>
+    <div id="hist-content"></div>
+  </div>
+
+  <!-- PAGE PARAMÈTRES -->
+  <div class="page" id="page-params">
+    <div class="page-title">Paramètres</div>
+    <div id="params-content"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <button class="nav-btn active" onclick="goTo('home')" id="nav-home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      Accueil
+    </button>
+    <button class="nav-btn" onclick="goTo('history')" id="nav-history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+        <rect x="9" y="3" width="6" height="4" rx="1"/>
+        <path d="M9 12h6M9 16h4"/>
+      </svg>
+      Historique
+    </button>
+    <button class="nav-btn" onclick="goTo('params')" id="nav-params">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+      Paramètres
+    </button>
+  </nav>
+
+  <!-- FAB -->
+  <button class="fab" onclick="openAddSession()" title="Ajouter une session">+</button>
+
+  <!-- MODAL AJOUTER SESSION -->
+  <div class="modal-overlay" id="modal-add">
+    <div class="modal">
+      <div class="modal-title">Nouvelle session</div>
+      <div class="modal-field">
+        <label>Mots écrits</label>
+        <input class="modal-input mono" type="number" id="add-words" placeholder="500" inputmode="numeric">
+      </div>
+      <div class="modal-field">
+        <label>Date</label>
+        <input class="modal-input" type="date" id="add-date">
+      </div>
+      <div class="modal-field">
+        <label>Note (optionnel)</label>
+        <textarea class="modal-input" id="add-note" placeholder="Bon flow, chapitre 2..."></textarea>
+      </div>
+      <div class="error-msg" id="add-error"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-add')">Annuler</button>
+        <button class="btn btn-primary" onclick="saveSession()">Valider</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETAIL SESSION -->
+  <div class="modal-overlay modal-center" id="modal-detail">
+    <div class="modal">
+      <div class="modal-title" id="detail-title"></div>
+      <div id="detail-body"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-detail')">Fermer</button>
+        <button class="btn btn-secondary btn-sm" onclick="editSessionFromDetail()">Modifier</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITER SESSION -->
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal">
+      <div class="modal-title">Modifier la session</div>
+      <input type="hidden" id="edit-id">
+      <div class="modal-field">
+        <label>Mots écrits</label>
+        <input class="modal-input mono" type="number" id="edit-words" inputmode="numeric">
+      </div>
+      <div class="modal-field">
+        <label>Date</label>
+        <input class="modal-input" type="date" id="edit-date">
+      </div>
+      <div class="modal-field">
+        <label>Note (optionnel)</label>
+        <textarea class="modal-input" id="edit-note"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteSession()">Supprimer</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-edit')">Annuler</button>
+        <button class="btn btn-primary" onclick="updateSession()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOUVEAU SPRINT -->
+  <div class="modal-overlay" id="modal-sprint">
+    <div class="modal">
+      <div class="modal-title" id="sprint-modal-title">Nouveau sprint</div>
+      <input type="hidden" id="sprint-edit-id">
+      <div class="error-msg" id="sprint-error"></div>
+      <div class="modal-field">
+        <label>Nom du sprint</label>
+        <input class="modal-input" type="text" id="sprint-name" placeholder="Sprint 1">
+      </div>
+      <div class="modal-field">
+        <label>Objectif (mots)</label>
+        <input class="modal-input mono" type="number" id="sprint-goal" inputmode="numeric" placeholder="10000">
+      </div>
+      <div class="modal-field">
+        <label>Date de début</label>
+        <input class="modal-input" type="date" id="sprint-start">
+      </div>
+      <div class="modal-field">
+        <label>Date de fin prévue</label>
+        <input class="modal-input" type="date" id="sprint-end">
+      </div>
+      <div class="modal-field">
+        <label>Seuil jaune (mots min)</label>
+        <input class="modal-input mono" type="number" id="sprint-yellow" inputmode="numeric" placeholder="400">
+      </div>
+      <div class="modal-field">
+        <label>Seuil vert (mots min)</label>
+        <input class="modal-input mono" type="number" id="sprint-green" inputmode="numeric" placeholder="600">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-sprint')">Annuler</button>
+        <button class="btn btn-primary" onclick="saveSprint()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRM -->
+  <div class="modal-overlay modal-center" id="modal-confirm">
+    <div class="modal">
+      <div class="modal-title" id="confirm-title"></div>
+      <div id="confirm-body" style="font-size:14px;color:var(--text2);margin-bottom:20px;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-confirm')">Annuler</button>
+        <button class="btn btn-danger" id="confirm-ok">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// STORAGE
+// ============================================================
+const STORAGE_KEY = 'roman_v1';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return defaultData();
+}
+
+function saveData(d) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+}
+
+function defaultData() {
+  const today = todayStr();
+  return {
+    marathon: { pagesGoal: 300, pagesCurrent: 0 },
+    sprints: [
+      {
+        id: uid(),
+        name: 'Sprint 1',
+        goal: 10000,
+        start: today,
+        end: '2025-06-30',
+        yellowThreshold: 400,
+        greenThreshold: 600,
+        status: 'active'
+      }
+    ],
+    sessions: [],
+    settings: { yellowThreshold: 400, greenThreshold: 600 }
+  };
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function fmtDate(str) {
+  if (!str) return '';
+  const [y, m, d] = str.split('-');
+  return `${d}/${m}/${y}`;
+}
+function fmtNum(n) { return n.toLocaleString('fr-FR'); }
+
+function getColor(words, yellowT, greenT) {
+  if (words >= greenT) return 'green';
+  if (words >= yellowT) return 'yellow';
+  return 'red';
+}
+
+function getActiveSprint(data) {
+  return data.sprints.find(s => s.status === 'active') || null;
+}
+
+function getSprintSessions(data, sprintId) {
+  return data.sessions.filter(s => s.sprintId === sprintId);
+}
+
+function sprintWords(data, sprintId) {
+  return getSprintSessions(data, sprintId).reduce((a, s) => a + s.words, 0);
+}
+
+function pct(val, goal) {
+  if (!goal) return 0;
+  return Math.round(val / goal * 100);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  if (page === 'home') renderHome();
+  if (page === 'history') renderHistory();
+  if (page === 'params') renderParams();
+}
+
+// ============================================================
+// RENDER HOME
+// ============================================================
+function renderHome() {
+  const data = loadData();
+  const active = getActiveSprint(data);
+  let html = '';
+
+  // MARATHON
+  const mp = pct(data.marathon.pagesCurrent, data.marathon.pagesGoal);
+  const mpFill = Math.min(100, mp);
+  html += `
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-label">Marathon</div>
+    <div class="prog-wrap">
+      <div class="prog-bg"><div class="prog-fill marathon" style="width:${mpFill}%"></div></div>
+      <div class="prog-meta">
+        <div>
+          <div class="prog-val">${fmtNum(data.marathon.pagesCurrent)} <span style="font-size:14px;color:var(--text3)">/ ${fmtNum(data.marathon.pagesGoal)} pages</span></div>
+        </div>
+        <div class="prog-pct marathon">${mp}%</div>
+      </div>
+    </div>
+  </div>`;
+
+  // SPRINT EN COURS
+  if (active) {
+    const sw = sprintWords(data, active.id);
+    const sp = pct(sw, active.goal);
+    const spFill = Math.min(100, sp);
+    const sessions = getSprintSessions(data, active.id);
+    const avg = sessions.length ? Math.round(sw / sessions.length) : 0;
+
+    html += `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-label" style="margin-bottom:0">${active.name}</div>
+        <span class="sprint-tag active">En cours</span>
+      </div>
+      <div class="prog-wrap" style="margin-top:0">
+        <div class="prog-bg"><div class="prog-fill" style="width:${spFill}%"></div></div>
+        <div class="prog-meta">
+          <div>
+            <div class="prog-val">${fmtNum(sw)} <span style="font-size:14px;color:var(--text3)">/ ${fmtNum(active.goal)} mots</span></div>
+            <div class="prog-sub">${sessions.length} session${sessions.length > 1 ? 's' : ''} · moy. ${fmtNum(avg)} mots</div>
+          </div>
+          <div class="prog-pct">${sp}%</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:6px;">${fmtDate(active.start)} → ${fmtDate(active.end)}</div>
+      ${renderPrevisionnel(data, active)}
+    </div>`;
+
+    // 5 DERNIÈRES SESSIONS
+    const last5 = [...sessions].sort((a,b) => a.date.localeCompare(b.date)).slice(-5);
+    html += `<div class="card-label" style="margin:16px 0 8px;">5 dernières sessions</div>`;
+    html += `<div class="sessions-row">`;
+    for (let i = 0; i < 5; i++) {
+      const s = last5[i];
+      if (s) {
+        html += `<div class="session-dot ${s.color}" onclick="showDetail('${s.id}')">
+          <div class="session-dot-words">${s.words}</div>
+        </div>`;
+      } else {
+        html += `<div class="session-dot empty"></div>`;
+      }
+    }
+    html += `</div>`;
+
+    // RECORDS
+    html += renderRecords(data, active);
+  } else {
+    html += `<div class="empty">Aucun sprint actif.<br>Créez un sprint dans les paramètres.</div>`;
+  }
+
+  // SPRINTS PASSÉS
+  const closed = data.sprints.filter(s => s.status === 'closed').reverse();
+  if (closed.length > 0) {
+    html += `<div class="divider"></div>`;
+    html += `<div class="card-label" style="margin-bottom:12px;">Sprints précédents</div>`;
+    closed.forEach(sp => {
+      const sw = sprintWords(data, sp.id);
+      const spp = pct(sw, sp.goal);
+      const spFill = Math.min(100, spp);
+      const sess = getSprintSessions(data, sp.id);
+      const avg = sess.length ? Math.round(sw / sess.length) : 0;
+      html += `
+      <div class="sprint-hist">
+        <div class="sprint-hist-header">
+          <span class="sprint-hist-name">${sp.name}</span>
+          <span class="sprint-hist-status closed">Clôturé</span>
+        </div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${spFill}%;background:var(--text3)"></div></div>
+        <div class="prog-meta" style="margin-top:6px;">
+          <div class="prog-sub">${fmtNum(sw)} / ${fmtNum(sp.goal)} mots · ${spp}%</div>
+        </div>
+        <div class="sprint-hist-meta">
+          <div>${fmtDate(sp.start)} → ${fmtDate(sp.end)}</div>
+        </div>
+        <div class="sprint-hist-meta">
+          <div>${sess.length} session${sess.length>1?'s':''}</div>
+          <div>Moy. <span>${fmtNum(avg)}</span> mots/session</div>
+        </div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('home-content').innerHTML = html;
+}
+
+function renderPrevisionnel(data, sprint) {
+  const sessions = getSprintSessions(data, sprint.id);
+  if (sessions.length < 3) {
+    return `<div class="previsionnel">Effectuez trois sessions dans ce sprint pour calculer le rythme prévisionnel.</div>`;
+  }
+  const sw = sprintWords(data, sprint.id);
+  const wordsLeft = sprint.goal - sw;
+  if (wordsLeft <= 0) return `<div class="previsionnel good">Objectif du sprint atteint !</div>`;
+
+  const today = new Date();
+  const end = new Date(sprint.end);
+  const start = new Date(sprint.start);
+  const daysElapsed = Math.max(1, Math.floor((today - start) / 86400000));
+  const daysLeft = Math.max(0, Math.floor((end - today) / 86400000));
+
+  const freq = sessions.length / daysElapsed;
+  const sessionsLeft = Math.floor(freq * daysLeft);
+
+  if (sessionsLeft <= 0) {
+    return `<div class="previsionnel warning">Plus assez de jours pour atteindre l'objectif à ce rythme.</div>`;
+  }
+
+  const needed = Math.ceil(wordsLeft / sessionsLeft);
+  const avg = Math.round(sw / sessions.length);
+  const projected = sw + avg * sessionsLeft;
+
+  const cls = projected >= sprint.goal ? 'good' : 'warning';
+  return `<div class="previsionnel ${cls}">À ton rythme actuel : ~${fmtNum(projected)} mots fin sprint · il te faut <strong style="color:var(--text)">${fmtNum(needed)} mots/session</strong> pour atteindre l'objectif.</div>`;
+}
+
+function renderRecords(data, activeSprint) {
+  const allSessions = data.sessions;
+  const sprintSessions = getSprintSessions(data, activeSprint.id);
+
+  const bestAll = allSessions.length ? Math.max(...allSessions.map(s => s.words)) : 0;
+  const bestSprint = sprintSessions.length ? Math.max(...sprintSessions.map(s => s.words)) : 0;
+  const avgSprint = sprintSessions.length ? Math.round(sprintSessions.reduce((a,s) => a+s.words, 0) / sprintSessions.length) : 0;
+
+  let bestSprintName = activeSprint.name;
+  let bestSprintWords = sprintWords(data, activeSprint.id);
+  data.sprints.forEach(sp => {
+    const w = sprintWords(data, sp.id);
+    if (w > bestSprintWords) { bestSprintWords = w; bestSprintName = sp.name; }
+  });
+
+  return `
+  <div class="divider" style="margin:16px 0;"></div>
+  <div class="card-label" style="margin-bottom:10px;">Records & stats</div>
+  <div class="records-grid">
+    <div class="record-item">
+      <div class="record-val">${fmtNum(bestSprint)}</div>
+      <div class="record-lbl">Meilleure session (sprint)</div>
+    </div>
+    <div class="record-item">
+      <div class="record-val">${fmtNum(bestAll)}</div>
+      <div class="record-lbl">Meilleure session (marathon)</div>
+    </div>
+    <div class="record-item">
+      <div class="record-val">${fmtNum(avgSprint)}</div>
+      <div class="record-lbl">Moyenne (sprint)</div>
+    </div>
+    <div class="record-item">
+      <div class="record-val" style="font-size:13px;line-height:1.3;">${bestSprintName}</div>
+      <div class="record-lbl">Meilleur sprint</div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// RENDER HISTORY
+// ============================================================
+let histFilter = 'all';
+
+function renderHistory() {
+  const data = loadData();
+  const filters = document.getElementById('hist-filters');
+  let fHtml = `<div class="filter-chip ${histFilter==='all'?'active':''}" onclick="setHistFilter('all')">Tous</div>`;
+  data.sprints.forEach(sp => {
+    fHtml += `<div class="filter-chip ${histFilter===sp.id?'active':''}" onclick="setHistFilter('${sp.id}')">${sp.name}</div>`;
+  });
+  filters.innerHTML = fHtml;
+
+  let sessions = [...data.sessions];
+  if (histFilter !== 'all') sessions = sessions.filter(s => s.sprintId === histFilter);
+  sessions.sort((a,b) => b.date.localeCompare(a.date));
+
+  let html = '';
+  if (sessions.length === 0) {
+    html = `<div class="empty">Aucune session enregistrée.</div>`;
+  } else {
+    sessions.forEach(s => {
+      const sp = data.sprints.find(sp => sp.id === s.sprintId);
+      html += `
+      <div class="hist-session" onclick="openEdit('${s.id}')">
+        <div class="hist-color-bar ${s.color}"></div>
+        <div class="hist-info">
+          <div class="hist-words">${fmtNum(s.words)} mots</div>
+          <div class="hist-date">${fmtDate(s.date)}${sp ? ` · ${sp.name}` : ''}</div>
+          ${s.note ? `<div class="hist-note">${s.note}</div>` : ''}
+        </div>
+        <button class="hist-edit-btn" onclick="event.stopPropagation();openEdit('${s.id}')">›</button>
+      </div>`;
+    });
+  }
+  document.getElementById('hist-content').innerHTML = html;
+}
+
+function setHistFilter(f) {
+  histFilter = f;
+  renderHistory();
+}
+
+// ============================================================
+// RENDER PARAMS
+// ============================================================
+function renderParams() {
+  const data = loadData();
+  const active = getActiveSprint(data);
+  let html = '';
+
+  // MARATHON
+  html += `
+  <div class="param-section">
+    <div class="param-section-title">Marathon</div>
+    <div class="param-row">
+      <div><div class="param-label">Pages conservées</div></div>
+      <div class="stepper">
+        <button class="step-btn" onclick="adjustPages(-1)">−</button>
+        <div class="step-val" id="pages-val">${data.marathon.pagesCurrent}</div>
+        <button class="step-btn" onclick="adjustPages(1)">+</button>
+      </div>
+    </div>
+    <div class="param-row">
+      <div><div class="param-label">Objectif (pages)</div></div>
+      <input class="param-input mono" type="number" id="marathon-goal" value="${data.marathon.pagesGoal}" inputmode="numeric" onchange="saveMarathonGoal()">
+    </div>
+  </div>`;
+
+  // SPRINT EN COURS
+  if (active) {
+    html += `
+    <div class="param-section">
+      <div class="param-section-title">Sprint en cours</div>
+      <div class="param-row">
+        <div><div class="param-label">Nom</div></div>
+        <input class="param-input wide" type="text" id="active-name" value="${active.name}" onchange="saveActiveSprint()">
+      </div>
+      <div class="param-row">
+        <div><div class="param-label">Objectif (mots)</div></div>
+        <input class="param-input mono" type="number" id="active-goal" value="${active.goal}" inputmode="numeric" onchange="saveActiveSprint()">
+      </div>
+      <div class="param-row">
+        <div><div class="param-label">Date de début</div></div>
+        <input class="param-input" type="date" id="active-start" value="${active.start}" onchange="saveActiveSprint()">
+      </div>
+      <div class="param-row">
+        <div><div class="param-label">Date de fin</div></div>
+        <input class="param-input" type="date" id="active-end" value="${active.end}" onchange="saveActiveSprint()">
+      </div>
+      <div class="param-row">
+        <div><div class="param-label">Seuil jaune</div><div class="param-sub">mots minimum</div></div>
+        <input class="param-input mono" type="number" id="active-yellow" value="${active.yellowThreshold}" inputmode="numeric" onchange="saveActiveSprint()">
+      </div>
+      <div class="param-row">
+        <div><div class="param-label">Seuil vert</div><div class="param-sub">mots minimum</div></div>
+        <input class="param-input mono" type="number" id="active-green" value="${active.greenThreshold}" inputmode="numeric" onchange="saveActiveSprint()">
+      </div>
+      <div id="color-preview-active" style="margin-top:8px;"></div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-danger btn-sm btn-full" onclick="confirmClose()">Clôturer ce sprint</button>
+      </div>
+    </div>`;
+  }
+
+  // SPRINTS PASSÉS (modifiables)
+  const closed = data.sprints.filter(s => s.status === 'closed');
+  if (closed.length > 0) {
+    html += `
+    <div class="param-section">
+      <div class="param-section-title">Sprints clôturés</div>`;
+    closed.reverse().forEach(sp => {
+      const sw = sprintWords(data, sp.id);
+      html += `
+      <div class="card" style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--text)">${sp.name}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${fmtDate(sp.start)} → ${fmtDate(sp.end)} · ${fmtNum(sw)} mots</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="editClosedSprint('${sp.id}')">Modifier</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // NOUVEAU SPRINT
+  html += `
+  <div class="param-section">
+    <div class="param-section-title">Sprints</div>
+    <button class="btn btn-secondary btn-full" onclick="openNewSprint()">+ Nouveau sprint</button>
+  </div>`;
+
+  // EXPORT / IMPORT
+  html += `
+  <div class="param-section">
+    <div class="param-section-title">Données</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" style="flex:1" onclick="exportData()">Exporter</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('import-file').click()">Importer</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    <div style="font-size:11px;color:var(--text3);margin-top:8px;">Export JSON — sauvegardez régulièrement pour ne rien perdre.</div>
+  </div>`;
+
+  document.getElementById('params-content').innerHTML = html;
+  updateColorPreview();
+}
+
+function updateColorPreview() {
+  const el = document.getElementById('color-preview-active');
+  if (!el) return;
+  const y = parseInt(document.getElementById('active-yellow')?.value) || 400;
+  const g = parseInt(document.getElementById('active-green')?.value) || 600;
+  el.innerHTML = `
+  <div class="color-preview">
+    <div class="cp-item red">< ${y} mots</div>
+    <div class="cp-item yellow">${y}–${g-1}</div>
+    <div class="cp-item green">≥ ${g} mots</div>
+  </div>`;
+}
+
+// ============================================================
+// SESSIONS
+// ============================================================
+function openAddSession() {
+  document.getElementById('add-words').value = '';
+  document.getElementById('add-date').value = todayStr();
+  document.getElementById('add-note').value = '';
+  document.getElementById('add-error').classList.remove('show');
+  openModal('modal-add');
+  setTimeout(() => document.getElementById('add-words').focus(), 300);
+}
+
+function saveSession() {
+  const data = loadData();
+  const active = getActiveSprint(data);
+  if (!active) {
+    showError('add-error', 'Aucun sprint actif. Créez un sprint dans les paramètres.');
+    return;
+  }
+  const words = parseInt(document.getElementById('add-words').value);
+  if (!words || words <= 0) {
+    showError('add-error', 'Entrez un nombre de mots valide.');
+    return;
+  }
+  const date = document.getElementById('add-date').value || todayStr();
+  const note = document.getElementById('add-note').value.trim();
+  const color = getColor(words, active.yellowThreshold, active.greenThreshold);
+
+  data.sessions.push({
+    id: uid(),
+    sprintId: active.id,
+    words,
+    date,
+    note,
+    color,
+    yellowThreshold: active.yellowThreshold,
+    greenThreshold: active.greenThreshold
+  });
+  saveData(data);
+  closeModal('modal-add');
+  renderHome();
+}
+
+function showDetail(sessionId) {
+  const data = loadData();
+  const s = data.sessions.find(s => s.id === sessionId);
+  if (!s) return;
+  document.getElementById('detail-title').textContent = fmtDate(s.date) + ' — ' + fmtNum(s.words) + ' mots';
+  const colorLabel = s.color === 'green' ? '🟢 Excellente' : s.color === 'yellow' ? '🟡 Correcte' : '🔴 Faible';
+  document.getElementById('detail-body').innerHTML = `
+    <div style="margin-bottom:12px;font-size:14px;color:var(--text2);">${colorLabel}</div>
+    ${s.note ? `<div style="font-size:14px;color:var(--text);font-style:italic;line-height:1.6;">"${s.note}"</div>` : '<div style="font-size:13px;color:var(--text3);font-style:italic;">Aucune note.</div>'}`;
+  document.getElementById('detail-body').dataset.sessionId = sessionId;
+  openModal('modal-detail');
+}
+
+function editSessionFromDetail() {
+  const sessionId = document.getElementById('detail-body').dataset.sessionId;
+  closeModal('modal-detail');
+  setTimeout(() => openEdit(sessionId), 200);
+}
+
+function openEdit(sessionId) {
+  const data = loadData();
+  const s = data.sessions.find(s => s.id === sessionId);
+  if (!s) return;
+  document.getElementById('edit-id').value = s.id;
+  document.getElementById('edit-words').value = s.words;
+  document.getElementById('edit-date').value = s.date;
+  document.getElementById('edit-note').value = s.note || '';
+  openModal('modal-edit');
+}
+
+function updateSession() {
+  const data = loadData();
+  const id = document.getElementById('edit-id').value;
+  const idx = data.sessions.findIndex(s => s.id === id);
+  if (idx < 0) return;
+  const words = parseInt(document.getElementById('edit-words').value);
+  if (!words || words <= 0) return;
+  const s = data.sessions[idx];
+  s.words = words;
+  s.date = document.getElementById('edit-date').value;
+  s.note = document.getElementById('edit-note').value.trim();
+  s.color = getColor(words, s.yellowThreshold, s.greenThreshold);
+  saveData(data);
+  closeModal('modal-edit');
+  renderHome();
+  renderHistory();
+}
+
+function deleteSession() {
+  const id = document.getElementById('edit-id').value;
+  showConfirm('Supprimer cette session ?', 'Cette action est irréversible.', () => {
+    const data = loadData();
+    data.sessions = data.sessions.filter(s => s.id !== id);
+    saveData(data);
+    closeModal('modal-edit');
+    renderHome();
+    renderHistory();
+  });
+}
+
+// ============================================================
+// SPRINTS
+// ============================================================
+function openNewSprint() {
+  const data = loadData();
+  const active = getActiveSprint(data);
+  document.getElementById('sprint-modal-title').textContent = 'Nouveau sprint';
+  document.getElementById('sprint-edit-id').value = '';
+  document.getElementById('sprint-name').value = 'Sprint ' + (data.sprints.length + 1);
+  document.getElementById('sprint-goal').value = 10000;
+  document.getElementById('sprint-start').value = todayStr();
+  document.getElementById('sprint-end').value = '';
+  document.getElementById('sprint-yellow').value = active ? active.yellowThreshold : 400;
+  document.getElementById('sprint-green').value = active ? active.greenThreshold : 600;
+  const err = document.getElementById('sprint-error');
+  if (active) {
+    err.textContent = `Un sprint est déjà en cours ("${active.name}"). Clôturez-le avant d'en créer un nouveau.`;
+    err.classList.add('show');
+  } else {
+    err.classList.remove('show');
+  }
+  openModal('modal-sprint');
+}
+
+function editClosedSprint(sprintId) {
+  const data = loadData();
+  const sp = data.sprints.find(s => s.id === sprintId);
+  if (!sp) return;
+  document.getElementById('sprint-modal-title').textContent = 'Modifier le sprint';
+  document.getElementById('sprint-edit-id').value = sp.id;
+  document.getElementById('sprint-name').value = sp.name;
+  document.getElementById('sprint-goal').value = sp.goal;
+  document.getElementById('sprint-start').value = sp.start;
+  document.getElementById('sprint-end').value = sp.end;
+  document.getElementById('sprint-yellow').value = sp.yellowThreshold;
+  document.getElementById('sprint-green').value = sp.greenThreshold;
+  document.getElementById('sprint-error').classList.remove('show');
+  openModal('modal-sprint');
+}
+
+function saveSprint() {
+  const data = loadData();
+  const editId = document.getElementById('sprint-edit-id').value;
+  const active = getActiveSprint(data);
+  const err = document.getElementById('sprint-error');
+
+  if (!editId && active) {
+    err.textContent = `Un sprint est déjà en cours. Clôturez-le d'abord.`;
+    err.classList.add('show');
+    return;
+  }
+
+  const name = document.getElementById('sprint-name').value.trim() || 'Sprint';
+  const goal = parseInt(document.getElementById('sprint-goal').value) || 10000;
+  const start = document.getElementById('sprint-start').value || todayStr();
+  const end = document.getElementById('sprint-end').value || '';
+  const yellow = parseInt(document.getElementById('sprint-yellow').value) || 400;
+  const green = parseInt(document.getElementById('sprint-green').value) || 600;
+
+  if (editId) {
+    const idx = data.sprints.findIndex(s => s.id === editId);
+    if (idx >= 0) {
+      data.sprints[idx] = { ...data.sprints[idx], name, goal, start, end, yellowThreshold: yellow, greenThreshold: green };
+    }
+  } else {
+    data.sprints.push({ id: uid(), name, goal, start, end, yellowThreshold: yellow, greenThreshold: green, status: 'active' });
+  }
+
+  saveData(data);
+  closeModal('modal-sprint');
+  renderParams();
+  renderHome();
+}
+
+function confirmClose() {
+  showConfirm('Clôturer ce sprint ?', 'Le sprint sera marqué comme terminé. Vous pourrez toujours le modifier.', () => {
+    const data = loadData();
+    const active = getActiveSprint(data);
+    if (active) { active.status = 'closed'; saveData(data); }
+    renderParams();
+    renderHome();
+  });
+}
+
+// ============================================================
+// PARAMS ACTIONS
+// ============================================================
+function adjustPages(delta) {
+  const data = loadData();
+  data.marathon.pagesCurrent = Math.max(0, data.marathon.pagesCurrent + delta);
+  saveData(data);
+  const el = document.getElementById('pages-val');
+  if (el) el.textContent = data.marathon.pagesCurrent;
+}
+
+function saveMarathonGoal() {
+  const data = loadData();
+  const val = parseInt(document.getElementById('marathon-goal').value);
+  if (val > 0) { data.marathon.pagesGoal = val; saveData(data); }
+}
+
+function saveActiveSprint() {
+  const data = loadData();
+  const active = getActiveSprint(data);
+  if (!active) return;
+  active.name = document.getElementById('active-name').value.trim() || active.name;
+  active.goal = parseInt(document.getElementById('active-goal').value) || active.goal;
+  active.start = document.getElementById('active-start').value || active.start;
+  active.end = document.getElementById('active-end').value || active.end;
+  active.yellowThreshold = parseInt(document.getElementById('active-yellow').value) || active.yellowThreshold;
+  active.greenThreshold = parseInt(document.getElementById('active-green').value) || active.greenThreshold;
+  saveData(data);
+  updateColorPreview();
+}
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+function exportData() {
+  const data = loadData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `roman_export_${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.sprints || !data.sessions) throw new Error('Format invalide');
+      showConfirm('Importer ces données ?', 'Vos données actuelles seront remplacées.', () => {
+        saveData(data);
+        renderHome();
+        renderParams();
+      });
+    } catch(err) {
+      alert('Fichier invalide.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ============================================================
+// MODALS & UTILS
+// ============================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+let confirmCallback = null;
+function showConfirm(title, body, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-body').textContent = body;
+  confirmCallback = cb;
+  document.getElementById('confirm-ok').onclick = () => { closeModal('modal-confirm'); confirmCallback && confirmCallback(); };
+  openModal('modal-confirm');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+renderHome();
+</script>
+</body>
+</html>
